@@ -161,7 +161,7 @@ namespace ElGamal
         /// </summary>
         /// <param name="Fi">Значение ф(N)</param>
         /// <param name="OpenKey">Открытый ключ</param>
-        public decimal EuclideanAlgorithm(decimal module, decimal element)
+        public static decimal EuclideanAlgorithm(decimal module, decimal element)
         {
             decimal inverse =0;
             decimal w1 = 0, w3 = module, r1 = 1, r3 = element; //Инициализация
@@ -187,6 +187,220 @@ namespace ElGamal
             //if ((CloseKey * OpenKey - 1) % Fi == 0) //Проверка правильности подбора ключей
            
             return inverse;
+        }
+        /// <summary>
+        /// Дискретное логарифмирование a^x = b(mod p)
+        /// </summary>
+        /// <param name="a">Число в степени</param>
+        /// <param name="q">Свободный элемент</param>
+        /// <param name="p">Модуль</param>
+        /// <returns>Показатель степени</returns>
+        public static decimal MatchingAlgorithm(decimal a, decimal b, decimal p)
+        {
+            decimal x=0,
+                H = (long)Math.Sqrt(Decimal.ToUInt64(p)) + 1;
+            decimal c = PowMod(a, H, p);
+            List<decimal> table_0 = new List<decimal>(),
+                table_1 = new List<decimal>();
+            table_1.Add((b % p));
+            for (long i = 1; i <= H; i++)
+            {
+                table_0.Add(PowMod(c, i, p));
+                table_1.Add(((PowMod(a, i, p) * b) % p));
+            }
+            decimal q;
+            for (short i = 0; i < table_1.Count; i++)
+            {
+                q = table_0.IndexOf(table_1[i]);
+                if ( q > 0)
+                {
+                    x = ((q+1) * H - i);//% (p - 1);
+                    break;
+                }
+            }
+            return x;
+        }
+        /// <summary>
+        /// a^x = b(mod p)
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="q"></param>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public static decimal RhoPolard(decimal a, decimal b, decimal p)
+        {
+            List<decimal> u = new List<decimal>(),
+                v = new List<decimal>(),
+                z = new List<decimal>();
+            List<int> ii = new List<int>();
+            decimal x = 0;
+            int i2;
+            u.Add(0);
+            v.Add(0);
+            z.Add(1);
+            int i = 0;
+            while (true)
+            {
+                if (z[i] > 0 && z[i] < p / 3)
+                {
+                    u.Add((u[i] + 1) % (p - 1));
+                    v.Add(v[i] % (p - 1));
+                }
+                if (z[i] > p / 3 && z[i] < 2 * (p / 3))
+                {
+                    u.Add((2 * u[i]) % (p - 1));
+                    v.Add((2 * v[i]) % (p - 1));
+                }
+                if (z[i] > 2 * (p / 3) && z[i] < p)
+                {
+                    u.Add(u[i] % (p - 1));
+                    v.Add((v[i] + 1) % (p - 1));
+                }
+                z.Add((PowMod(b, u[u.Count - 1], p - 1) * PowMod(a, v[v.Count - 1], p - 1)) % (p - 1));
+                i++;
+                if (z[i] > 0 && z[i] < p / 3)
+                {
+                    z[i] = (b * z[i]) % p;
+                }
+                if (z[i] > p / 3 && z[i] < 2 * (p / 3))
+                {
+                    z[i] = (z[i] * z[i]) % p;
+                }
+                if (z[i] > 2 * (p / 3) && z[i] < p)
+                {
+                    z[i] = (a * z[i]) % p;
+                }
+                i2 = -1;
+                /*for (int h = 0; h < z.Count - 2; h++)
+                {
+                    if (z[i] == z[h])
+                    {
+                        i2 = h;
+                        break;
+                    }
+                }
+                if (i2 != -1)
+                {
+                    break;
+                }*/
+                i2 = (int)Math.Ceiling((double)i / 2);
+                //i2 = (int)Math.Floor((double)i / 2);
+                if (i >= 2 && z[i2] == z[i])
+                {
+                    ii.Add(i2);
+                    if (GCD(u[i] - u[i2], p - 1) == 1)
+                    {
+                        x = (EuclideanAlgorithm(p - 1, (u[i] - u[i2])) * (v[i2] - v[i]));
+                        x = (x < 0) ? ((p - 1) + x) % (p - 1) : x % (p - 1);
+                    }
+                    //x = (v[i / 2] - v[i]) / (u[i] - u[i / 2]);
+                    if (ii.Count >= 3)
+                    {
+                        break;
+                    }
+                }
+            }
+            if(GCD(u[i] - u[i2], p - 1) == 1)
+            {
+                x = EuclideanAlgorithm(p - 1, (u[i] - u[i2]));// * (v[i2] - v[i]));
+                x = (x < 0) ? ((p - 1) + x) % (p - 1) : x % (p - 1);
+            }
+            /*if(GCD(u[i]-u[i/2], p - 1) == 1)
+            {
+                for (int j = 0; j < p-1; j++)
+                {
+                    if ((j * (u[i] - u[i / 2])) % (p - 1) == 1)
+                    {
+                        x = j * (v[i / 2] - v[i]);
+                        break;
+                    }
+                }
+            }*/
+           /* if (GCD(u[i] - u[i2], p - 1) == 1)
+            {
+                for (int j = 0; j < p - 1; j++)
+                {
+                    if ((j * (u[i] - u[i2])) % (p - 1) == 1)
+                    {
+                        x = j * (v[i2] - v[i]);
+                        break;
+                    }
+                }
+            }*/
+            return x;
+            /*decimal n = p - 1,
+                a0 = 0, a1 = 0, b0 = 0, b1 = 0, x0 = 1, x1 = 1,
+                cmp = p/3;//Phi(P)
+            if (a == q)
+            {
+                return 1;
+            }
+            bool start = true;
+            while(x0 != x1 || start)
+            {
+                start = false;
+                if(x0 < cmp)
+                {
+                    x0 = (a * x0) % p;
+                    //a0=a0
+                    b0 = (b0 + 1) % p;
+                }
+                if(x0 >= cmp && x0< 2 * cmp)
+                {
+                    x0 = (x0 * x0) % p;
+                    a0 = (2 * a0) % p;
+                    b0 = (2 * b0) % p;
+                }
+                if (x0 >= 2 * cmp)
+                {
+                    x0 = (q * x0) % p;
+                    a0 = (a0 + 1) % p;
+                    //b0=b0
+                }
+                for (int f = 0; f < 2; f++)
+                {
+                    if (x1 < cmp)
+                    {
+                        x1 = (a * x1) % p;
+                        //a1=a1
+                        b1 = (b1 + 1) % p;
+                    }
+                    if (x1 >= cmp && x1 < 2 * cmp)
+                    {
+                        x1 = (x1 * x1) % p;
+                        a1 = (2 * a1) % p;
+                        b1 = (2 * b1) % p;
+                    }
+                    if (x1 >= 2 * cmp)
+                    {
+                        x1 = (q * x1) % p;
+                        a1 = (a1 + 1) % p;
+                        //b1=b1
+                    }
+                }
+            }
+            decimal u = (a0 - a1) % n,
+                v = (b1 - b0) % n;
+            if (v % n == 0)
+            {
+                return null;
+            }
+            //long d = (long)EuclideanAlgorithm(n, v);
+            long d = (long)EuclideanAlgorithm(p, v);
+            long nu = d;
+            decimal x=0;
+            short i = 0, w;
+            while (i != (d + 1))
+            {
+                w = i;
+                x = ((u * nu + w * n) / d) % n;
+                if ((PowMod(q, x, p) - a % p) == 0)
+                {
+                    return x;
+                }
+                i++;
+            }
+            return x;*/
         }
         /// <summary>
         /// Определение большого простого числа(генерация)
