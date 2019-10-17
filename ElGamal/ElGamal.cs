@@ -157,6 +157,28 @@ namespace ElGamal
             return plain;
         }
         /// <summary>
+        /// Криптоанализ
+        /// </summary>
+        /// <param name="ciphermesage">Зашифрованное сообщение</param>
+        /// <param name="p">Модуль</param>
+        /// <param name="g">Генератор группы по модулю</param>
+        /// <returns></returns>
+        public static string GetPlainFromCipher(List<decimal[]> ciphermesage, decimal p, decimal g, decimal OpenKey)
+        {
+            string plain = "";
+            byte n;
+            decimal k;
+            for (int i = 0; i < ciphermesage.Count; i++)
+            {
+                k = ElGamal.MatchingAlgorithm(g, ciphermesage[i][0], p);
+                n = (byte)((ElGamal.PowMod(ElGamal.EuclideanAlgorithm(p, OpenKey), k, p) * ciphermesage[i][1]) % p);
+                Console.WriteLine($"{ciphermesage[i][0]} = {g}^k mod {p}\nk = {k}");
+                Console.WriteLine($"M = {n} = (({OpenKey})^-1)^{k} * {ciphermesage[i][1]} mod {p}");
+                plain += Encoding.ASCII.GetChars(new byte[] { n })[0];
+            }
+            return plain;
+        }
+        /// <summary>
         /// Вычисление обратного числа. Расширенный алгоритм Евклида
         /// </summary>
         /// <param name="Fi">Значение ф(N)</param>
